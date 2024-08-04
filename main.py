@@ -34,7 +34,7 @@ client = MyClient(intents=intents)
 
 @client.event
 async def on_ready():
-    print(f'Logged in as {client.user} (ID: {client.user.id})')
+    print(f'I am the asshole: {client.user} (ID: {client.user.id})')
     print('------')
 
 
