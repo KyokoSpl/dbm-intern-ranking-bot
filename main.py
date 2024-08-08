@@ -2,10 +2,12 @@ from typing import Optional
 
 import discord
 from discord import app_commands
+import settings
 
 
 MY_GUILD = discord.Object(id=1269330178488799252)  # replace with your guild id
-
+token = settings.TOKEN
+logger = settings.logging.getLogger("bot")
 
 class MyClient(discord.Client):
     def __init__(self, *, intents: discord.Intents):
@@ -34,14 +36,9 @@ client = MyClient(intents=intents)
 
 @client.event
 async def on_ready():
-    print(f'I am the asshole: {client.user} (ID: {client.user.id})')
-    print('------')
+    logger.info(f'Logged in as: {client.user} (ID: {client.user.id})')
 
 
-@client.tree.command()
-async def hello(interaction: discord.Interaction):
-    """Says hello!"""
-    await interaction.response.send_message(f'Hi, {interaction.user.mention}')
 
 
 @client.tree.command()
@@ -68,14 +65,16 @@ async def send(interaction: discord.Interaction, text_to_send: str):
 # To make an argument optional, you can either give it a supported default argument
 # or you can mark it as Optional from the typing standard library. This example does both.
 @client.tree.command()
-@app_commands.describe(member='The member you want to get the joined date from; defaults to the user who uses the command')
-async def joined(interaction: discord.Interaction, member: Optional[discord.Member] = None):
+@app_commands.describe(member='enter a result of your set')
+async def result(interaction: discord.Interaction, member: discord.Member = None, score: str = "0", enemy: discord.Member = None):
     """Says when a member joined."""
     # If no member is explicitly provided then we use the command user here
-    member = member or interaction.user
+    #member_one = member_one or interaction.user
 
     # The format_dt function formats the date time into a human readable representation in the official client
-    await interaction.response.send_message(f'{member} joined {discord.utils.format_dt(member.joined_at)}')
+    await interaction.response.send_message(f'{member} scored {score} vs {enemy}')
+    result = f'{member} scored {score} vs {enemy}'
+    logger.info(result)
 
 
 # A Context Menu command is an app command that can be run on a member or on a message by
@@ -113,4 +112,4 @@ async def report_message(interaction: discord.Interaction, message: discord.Mess
     await log_channel.send(embed=embed, view=url_view)
 
 
-client.run('MTI2OTMyMjkzMDM0MTQxNzA3MQ.GkWBnD.e7Sd8J3XV6rxAiMfFt964HdAzdU20h1FQ1WTNk')
+client.run(token, root_logger=True)
