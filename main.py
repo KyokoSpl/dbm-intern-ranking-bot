@@ -41,19 +41,11 @@ async def on_ready():
 
 
 
-@client.tree.command()
-@app_commands.describe(
-    first_value='The first value you want to add something to',
-    second_value='The value you want to add to the first value',
-)
-async def add(interaction: discord.Interaction, first_value: int, second_value: int):
-    """Adds two numbers together."""
-    await interaction.response.send_message(f'{first_value} + {second_value} = {first_value + second_value}')
-
-
-# The rename decorator allows us to change the display of the parameter on Discord.
 # In this example, even though we use `text_to_send` in the code, the client will use `text` instead.
 # Note that other decorators will still refer to it as `text_to_send` in the code.
+
+
+
 @client.tree.command()
 @app_commands.rename(text_to_send='text')
 @app_commands.describe(text_to_send='Text to send in the current channel')
@@ -62,30 +54,89 @@ async def send(interaction: discord.Interaction, text_to_send: str):
     await interaction.response.send_message(text_to_send)
 
 
+
 # To make an argument optional, you can either give it a supported default argument
 # or you can mark it as Optional from the typing standard library. This example does both.
+
+
+
+
+
+class AcceptDeclineView(discord.ui.View):
+    def __init__(self, member: discord.Member, score: str, enemy: discord.Member):
+        super().__init__(timeout=60)  # Die Buttons werden nach 60 Sekunden deaktiviert
+        self.member = member
+        self.score = score
+        self.enemy = enemy
+        self.accepted = None
+
+    @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
+    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user == self.enemy:
+            self.accepted = True
+            acceptembed = discord.Embed(
+                title=":white_check_mark: ACCEPTED",
+                description=f'You accepted the result!',
+                color=discord.Color.green()
+            )
+            await interaction.response.send_message(embed=acceptembed, ephemeral=True)
+
+            result_embed = discord.Embed(
+                title=":information_source: MATCH RESULT",
+                description=f'{self.member.mention} **scored** **__{self.score}__** **vs** {self.enemy.mention} ',
+                color=discord.Color.blue()
+            )
+            await interaction.followup.send(embed=result_embed)
+            self.stop()
+        else:
+            notallowed_embed = discord.Embed(
+                title=":no_entry_sign: NOT ALLOWED!",
+                description="You're not allowed to do that!",
+                color=discord.Color.red()
+            )
+            await interaction.response.send_message(embed=notallowed_embed, ephemeral=True)
+
+    @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
+    async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user == self.enemy:
+            self.accepted = False
+
+            report_embed = discord.Embed(
+                title=":x: RESULT DECLINED",
+                description=f'{self.enemy.mention} has declined the match result reported by {self.member.mention}. **Moderators have been notified!**',
+                color=discord.Color.orange()
+            )
+            await interaction.response.send_message(embed=report_embed)
+
+            self.stop()
+        else:
+            notallowed_embed = discord.Embed(
+                title=":no_entry_sign: NOT ALLOWED!",
+                description="You're not allowed to do that!",
+                color=discord.Color.red()
+            )
+            await interaction.response.send_message(embed=notallowed_embed, ephemeral=True)
+
+
 @client.tree.command()
-@app_commands.describe(member='enter a result of your set')
+@app_commands.describe(member='Enter your set result', enemy='Enter the opponent')
 async def result(interaction: discord.Interaction, member: discord.Member = None, score: str = "0", enemy: discord.Member = None):
-    """Says when a member joined."""
-    # If no member is explicitly provided then we use the command user here
-    #member_one = member_one or interaction.user
+    """Enter a result of your set"""
 
-    # The format_dt function formats the date time into a human readable representation in the official client
-    await interaction.response.send_message(f'{member} scored {score} vs {enemy}')
-    result = f'{member} scored {score} vs {enemy}'
-    logger.info(result)
+    if member is None or enemy is None:
+        await interaction.response.send_message("Both member and enemy must be specified!", ephemeral=True)
+        return
 
+    view = AcceptDeclineView(member, score, enemy)
+    prompt_embed = discord.Embed(
+        title="Do you accept the result?",
+        description=f'**{member.mention}** scored __**{score}**__ vs **You**',
+        color=discord.Color.blue()
+    )
+    
+    # Send the ping as a separate message, followed by the embed
+    await interaction.response.send_message(f'{enemy.mention}', embed=prompt_embed, view=view)
 
-# A Context Menu command is an app command that can be run on a member or on a message by
-# accessing a menu within the client, usually via right clicking.
-# It always takes an interaction as its first parameter and a Member or Message as its second parameter.
-
-# This context menu command only works on members
-@client.tree.context_menu(name='Show Join Date')
-async def show_join_date(interaction: discord.Interaction, member: discord.Member):
-    # The format_dt function formats the date time into a human readable representation in the official client
-    await interaction.response.send_message(f'{member} joined at {discord.utils.format_dt(member.joined_at)}')
 
 
 # This context menu command only works on messages
