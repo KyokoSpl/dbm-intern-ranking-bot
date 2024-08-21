@@ -27,7 +27,6 @@ def insert(player, wins, losses):
         cursor.execute(insert_query, (player, wins, losses))
         connection.commit()
         logger.info(f"inserted query {insert_query}")
-        if connection.is_connected():
-          cursor.close()
-          connection.close()
-          print("MySQL connection is closed")
+        cursor.close()
+        connection.close()
+        print("MySQL connection is closed")
