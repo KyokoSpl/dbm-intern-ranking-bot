@@ -3,8 +3,7 @@ from typing import Optional
 import discord
 from discord import app_commands
 import settings
-
-
+import api_handlers as api
 MY_GUILD = discord.Object(id=1269330178488799252)  # replace with your guild id
 token = settings.TOKEN
 logger = settings.logging.getLogger("bot")
@@ -83,6 +82,7 @@ class AcceptDeclineView(discord.ui.View):
 
             # Parse the score into wins and losses for each user
             member_score, enemy_score = map(int, self.score.split(':'))
+            #api_call_one = api.send_game_data(self.member, member_score, enemy_score)
             
             # Create the result message
             result_embed = discord.Embed(
@@ -91,6 +91,10 @@ class AcceptDeclineView(discord.ui.View):
                 color=discord.Color.blue()
             )
             await interaction.followup.send(embed=result_embed)
+            member = str(self.member)
+            enemy = str(self.enemy)
+            api_call_one = api.send_game_data(member, member_score, enemy_score)
+            api_call_two = api.send_game_data(enemy, enemy_score, member_score)
             self.stop()
         else:
             notallowed_embed = discord.Embed(

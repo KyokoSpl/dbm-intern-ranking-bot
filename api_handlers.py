@@ -1,16 +1,8 @@
 import requests
 import json
-api_url = "http://212.132.108.197:8000/ranking/game"
-
-import asyncio
-import requests
-
-player = "none"
-wins = 0
-losses = 0
 
 
-async def send_game_data():
+def send_game_data(player: str, wins: int, losses: int):
     # Create the game data
     game = {
         "player": player,
@@ -31,13 +23,6 @@ async def send_game_data():
         print(f"Failed to post game: {e}")
 
 # Main function to run the async task
-async def main():
-    await send_game_data()
-
-# Run the main function
-asyncio.run(main())
-
-
 
 # response = requests.post(api_url, game)
 # print(response)
