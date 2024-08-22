@@ -81,9 +81,13 @@ class AcceptDeclineView(discord.ui.View):
             )
             await interaction.response.send_message(embed=acceptembed, ephemeral=True)
 
+            # Parse the score into wins and losses for each user
+            member_score, enemy_score = map(int, self.score.split(':'))
+            
+            # Create the result message
             result_embed = discord.Embed(
-                title=":information_source: MATCH RESULT",
-                description=f'{self.member.mention} **scored** **__{self.score}__** **vs** {self.enemy.mention} ',
+                title=":information: MATCH RESULT",
+                description=f"**{self.member.mention} won a match ({member_score}:{enemy_score}) against {self.enemy.mention}**",
                 color=discord.Color.blue()
             )
             await interaction.followup.send(embed=result_embed)
