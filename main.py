@@ -81,9 +81,13 @@ class AcceptDeclineView(discord.ui.View):
             )
             await interaction.response.send_message(embed=acceptembed, ephemeral=True)
 
+            # Parse the score into wins and losses for each user
+            member_score, enemy_score = map(int, self.score.split(':'))
+            
+            # Create the result message
             result_embed = discord.Embed(
-                title=":information_source: MATCH RESULT",
-                description=f'{self.member.mention} **scored** **__{self.score}__** **vs** {self.enemy.mention} ',
+                title=":information: MATCH RESULT",
+                description=f"**{self.member.mention} won a match ({member_score}:{enemy_score}) against {self.enemy.mention}**",
                 color=discord.Color.blue()
             )
             await interaction.followup.send(embed=result_embed)
@@ -119,23 +123,23 @@ class AcceptDeclineView(discord.ui.View):
 
 
 @client.tree.command()
-@app_commands.describe(member='Enter your set result', enemy='Enter the opponent')
-async def result(interaction: discord.Interaction, member: discord.Member = None, score: str = "0", enemy: discord.Member = None):
+@app_commands.describe(score='Enter the score e.g., 4:3 (First your score)', enemy='Enter the opponent')
+async def result(interaction: discord.Interaction, score: str = "0", enemy: discord.Member = None):
     """Enter a result of your set"""
 
-    if member is None or enemy is None:
-        await interaction.response.send_message("Both member and enemy must be specified!", ephemeral=True)
+    member = interaction.user  # Der Benutzer, der den Befehl ausführt
+
+    if enemy is None:
+        await interaction.response.send_message("You must specify an opponent!", ephemeral=True)
         return
 
     view = AcceptDeclineView(member, score, enemy)
     prompt_embed = discord.Embed(
         title="Do you accept the result?",
-        description=f'**{member.mention}** scored __**{score}**__ vs **You**',
+        description=f'**{member.mention}** scored **{score}** vs **{enemy.mention}**',
         color=discord.Color.blue()
     )
-    
-    # Send the ping as a separate message, followed by the embed
-    await interaction.response.send_message(f'{enemy.mention}', embed=prompt_embed, view=view)
+    view.message = await interaction.response.send_message(f'{enemy.mention}', embed=prompt_embed, view=view)
 
 
 
