@@ -1,6 +1,11 @@
-# dbm-intern-ranking-bot
+# DBM Ranking Discord Bot
 
-## ToDo
-- fix security issue
-- split score message into two variables (see issue 3)
-- add api in main.py at the result command to send the results 
+### how to use
+- clone the repo
+- execute the following commands in the cloned repo
+- ``` bash
+  python -m venv venv
+  pip install -r requirements.txt
+  source ./venv/activate #choose the correct one for your shell
+  python main.py
+  ```
