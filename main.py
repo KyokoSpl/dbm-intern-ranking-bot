@@ -129,8 +129,22 @@ async def result(interaction: discord.Interaction, score: str = "0", enemy: disc
 
     member = interaction.user  # Der Benutzer, der den Befehl ausführt
 
-    if enemy is None:
-        await interaction.response.send_message("You must specify an opponent!", ephemeral=True)
+    if not score.count(':') == 1 or not all(part.isdigit() for part in score.split(':')):
+        scoreinvalid = discord.Embed (
+            title=":stop_sign: ERROR",
+            description="Invalid score format! Please use X:X where X is a number.",
+            color=discord.Color.red()
+        )
+        await interaction.response.send_message(embed=scoreinvalid, ephemeral=True)
+        return
+
+    if member == enemy:
+        enemyequalsmember = discord.Embed(
+            title=":stop_sign: ERROR",
+            description="You cannot report a match against yourself!",
+            color=discord.Color.red()
+        )
+        await interaction.response.send_message(embed=enemyequalsmember, ephemeral=True)
         return
 
     view = AcceptDeclineView(member, score, enemy)
