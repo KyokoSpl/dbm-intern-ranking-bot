@@ -71,7 +71,10 @@ class AcceptDeclineView(discord.ui.View):
 
     @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
     async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user == self.enemy:
+        moderator_role_id = 1276172733700374589
+        moderator_role = discord.utils.get(interaction.guild.roles, id=moderator_role_id)
+
+        if interaction.user == self.enemy or (moderator_role and moderator_role in interaction.user.roles):
             self.accepted = True
             acceptembed = discord.Embed(
                 title=":white_check_mark: ACCEPTED",
@@ -105,7 +108,10 @@ class AcceptDeclineView(discord.ui.View):
 
     @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
     async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user == self.enemy:
+        moderator_role_id = 1276172733700374589
+        moderator_role = discord.utils.get(interaction.guild.roles, id=moderator_role_id)
+
+        if interaction.user == self.enemy or (moderator_role and moderator_role in interaction.user.roles):            
             self.accepted = False
 
             report_embed = discord.Embed(
