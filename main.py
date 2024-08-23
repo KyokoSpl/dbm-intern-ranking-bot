@@ -71,7 +71,7 @@ class AcceptDeclineView(discord.ui.View):
 
     @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
     async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
-        moderator_role_id = 1276172733700374589
+        moderator_role_id = 962745818023092326
         moderator_role = discord.utils.get(interaction.guild.roles, id=moderator_role_id)
 
         if interaction.user == self.enemy or (moderator_role and moderator_role in interaction.user.roles):
@@ -88,7 +88,7 @@ class AcceptDeclineView(discord.ui.View):
             
             # Create the result message
             result_embed = discord.Embed(
-                title=":information: MATCH RESULT",
+                title="<:LuigiGG:1066376739443454014> MATCH RESULT",
                 description=f"**{self.member.mention} won a match ({member_score}:{enemy_score}) against {self.enemy.mention}**",
                 color=discord.Color.blue()
             )
@@ -108,7 +108,7 @@ class AcceptDeclineView(discord.ui.View):
 
     @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
     async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
-        moderator_role_id = 1276172733700374589
+        moderator_role_id = 962745818023092326
         moderator_role = discord.utils.get(interaction.guild.roles, id=moderator_role_id)
 
         if interaction.user == self.enemy or (moderator_role and moderator_role in interaction.user.roles):            
@@ -154,6 +154,16 @@ async def result(interaction: discord.Interaction, score: str = "0", enemy: disc
             color=discord.Color.red()
         )
         await interaction.response.send_message(embed=enemyequalsmember, ephemeral=True)
+        return
+    
+    bot_role = discord.utils.get(interaction.guild.roles, id=962486170384752680)  # Bot-Rolle ID
+    if bot_role in enemy.roles:
+        botreport = discord.Embed(
+            title=":stop_sign: ERROR",
+            description="Seriously? You wanna play against one of the all mighty?",
+            color=discord.Color.red()
+        )
+        await interaction.response.send_message(embed=botreport, ephemeral=True)
         return
 
     view = AcceptDeclineView(member, score, enemy)
