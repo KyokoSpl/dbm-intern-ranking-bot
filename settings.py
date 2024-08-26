@@ -2,7 +2,7 @@ import os
 from logging.config import dictConfig
 import logging
 
-TOKEN = 'MTI2OTMyMjkzMDM0MTQxNzA3MQ.GkWBnD.e7Sd8J3XV6rxAiMfFt964HdAzdU20h1FQ1WTNk'
+TOKEN = 'Your Token' 
 
 LOGGING_CONFIG = {
     "version": 1,

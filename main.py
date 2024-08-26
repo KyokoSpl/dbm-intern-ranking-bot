@@ -4,7 +4,7 @@ import discord
 from discord import app_commands
 import settings
 import api_handlers as api
-MY_GUILD = discord.Object(id=1269330178488799252)  # replace with your guild id
+MY_GUILD = discord.Object(id=GUILDID)  # replace with your guild id
 token = settings.TOKEN
 logger = settings.logging.getLogger("bot")
 
@@ -71,7 +71,7 @@ class AcceptDeclineView(discord.ui.View):
 
     @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
     async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
-        moderator_role_id = 962745818023092326
+        moderator_role_id = YOURROLEID
         moderator_role = discord.utils.get(interaction.guild.roles, id=moderator_role_id)
 
         if interaction.user == self.enemy or (moderator_role and moderator_role in interaction.user.roles):
@@ -88,7 +88,7 @@ class AcceptDeclineView(discord.ui.View):
             
             # Create the result message
             result_embed = discord.Embed(
-                title="<:LuigiGG:1066376739443454014> MATCH RESULT",
+                    title=":information: MATCH RESULT",
                 description=f"**{self.member.mention} won a match ({member_score}:{enemy_score}) against {self.enemy.mention}**",
                 color=discord.Color.blue()
             )
@@ -175,29 +175,6 @@ async def result(interaction: discord.Interaction, score: str = "0", enemy: disc
     view.message = await interaction.response.send_message(f'{enemy.mention}', embed=prompt_embed, view=view)
 
 
-
-# This context menu command only works on messages
-@client.tree.context_menu(name='Report to Moderators')
-async def report_message(interaction: discord.Interaction, message: discord.Message):
-    # We're sending this response message with ephemeral=True, so only the command executor can see it
-    await interaction.response.send_message(
-        f'Thanks for reporting this message by {message.author.mention} to our moderators.', ephemeral=True
-    )
-
-    # Handle report by sending it into a log channel
-    log_channel = interaction.guild.get_channel(0)  # replace with your channel id
-
-    embed = discord.Embed(title='Reported Message')
-    if message.content:
-        embed.description = message.content
-
-    embed.set_author(name=message.author.display_name, icon_url=message.author.display_avatar.url)
-    embed.timestamp = message.created_at
-
-    url_view = discord.ui.View()
-    url_view.add_item(discord.ui.Button(label='Go to Message', style=discord.ButtonStyle.url, url=message.jump_url))
-
-    await log_channel.send(embed=embed, view=url_view)
 
 
 client.run(token, root_logger=True)
