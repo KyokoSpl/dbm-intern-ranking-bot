@@ -7,6 +7,7 @@ import api_handlers as api
 MY_GUILD = discord.Object(id=GUILDID)  # replace with your guild id
 token = settings.TOKEN
 logger = settings.logging.getLogger("bot")
+user_map = {yourid: "your name"}
 
 class MyClient(discord.Client):
     def __init__(self, *, intents: discord.Intents):
@@ -93,10 +94,15 @@ class AcceptDeclineView(discord.ui.View):
                 color=discord.Color.blue()
             )
             await interaction.followup.send(embed=result_embed)
-            member = str(self.member)
-            enemy = str(self.enemy)
-            api_call_one = api.send_game_data(member, member_score, enemy_score)
-            api_call_two = api.send_game_data(enemy, enemy_score, member_score)
+            # Get IDs
+            member = int(self.member.id)
+            enemy = int(self.enemy.id)
+
+            # Map IDs to usernames
+            member_name = user_map.get(member, "Unknown User")
+            enemy_name = user_map.get(enemy, "Unknown User")
+            api_call_one = api.send_game_data(member_name, member_score, enemy_score)
+            api_call_two = api.send_game_data(enemy_name, enemy_score, member_score)
             self.stop()
         else:
             notallowed_embed = discord.Embed(
