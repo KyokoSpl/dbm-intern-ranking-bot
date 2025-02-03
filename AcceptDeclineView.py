@@ -1,5 +1,4 @@
 import discord
-from mapppings import user_map
 from mapppings import char_map
 import api_handlers as api
 
@@ -10,15 +9,15 @@ class AcceptDeclineView(discord.ui.View):
         member: discord.Member,
         score: str,
         enemy: discord.Member,
-        charp1: str,
-        charp2: str,
+        # charp1: str,
+        # charp2: str,
     ):
         super().__init__(timeout=300)  # Die Buttons werden nach 5 Minuten deaktiviert
         self.member = member
         self.score = score
         self.enemy = enemy
-        self.charp1 = charp1
-        self.charp2 = charp2
+        # self.charp1 = charp1
+        # self.charp2 = charp2
         self.accepted = None
 
     @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
@@ -45,25 +44,23 @@ class AcceptDeclineView(discord.ui.View):
             # Create the result message
             result_embed = discord.Embed(
                 title="<:LuigiGG:1066376739443454014> MATCH RESULT",
-                description=f"**{self.member.mention}** scored **({member_score}:{enemy_score})** against **{self.enemy.mention}** \n  **{self.member.mention}** played **{self.charp1}** and **{self.enemy.mention}** played **{self.charp2}**",
+                description=f"**{self.member.mention}** scored **({member_score}:{enemy_score})** against **{self.enemy.mention}** \n",
                 color=discord.Color.blue(),
             )
+            # **{self.member.mention}** played **{self.charp1}** and **{self.enemy.mention}** played **{self.charp2}**
             await interaction.followup.send(embed=result_embed)
             # Get IDs
             member = int(self.member.id)
             enemy = int(self.enemy.id)
 
             # Map IDs to usernames
-            member_name = user_map.get(member, "Unknown User")
-            enemy_name = user_map.get(enemy, "Unknown User")
-            charp1_id = char_map.get(self.charp1)
-            charp2_id = char_map.get(self.charp2)
-            api_call_one = api.send_game_data(
-                member_name, charp1_id, member_score, enemy_score
-            )
-            api_call_two = api.send_game_data(
-                enemy_name, charp2_id, enemy_score, member_score
-            )
+
+            print(member)
+            print(enemy)
+            # charp1_id = char_map.get(self.charp1)
+            # charp2_id = char_map.get(self.charp2)
+            api_call_one = api.send_game_data(member, member_score, enemy_score)
+            api_call_two = api.send_game_data(enemy, enemy_score, member_score)
             self.stop()
         else:
             notallowed_embed = discord.Embed(
