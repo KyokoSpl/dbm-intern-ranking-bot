@@ -171,20 +171,6 @@ async def deleteplayer(
     interaction: discord.Interaction,
     player: discord.Member = None,
 ):
-    # moderator_role_id = 962745818023092326
-    # moderator_role = discord.utils.get(interaction.guild.roles, id=moderator_role_id)
-
-    # if interaction.user == player or (
-    #     moderator_role and moderator_role in interaction.user.roles
-    # ):
-    #     no_permission = discord.Embed(
-    #         title=":no_entry_sign: NOT ALLOWED!",
-    #         description="You're not allowed to do that!",
-    #         color=discord.Color.red(),
-    #     )
-    #     await interaction.response.send_message(embed=no_permission, ephemeral=True)
-    #     return
-
     if player == None:
         no_player = discord.Embed(
             title=":stop_sign: ERROR",
@@ -234,6 +220,37 @@ async def deletegame(
             color=discord.Color.green(),
         )
         await interaction.response.send_message(embed=deleted_game, ephemeral=True)
+
+
+@client.tree.command()
+@app_commands.describe(
+    player="Select Member to get his stats",
+)
+@app_commands.default_permissions(administrator=True)
+async def getstats(interaction: discord.Interaction, player: discord.Member = None):
+    """Get the stats of a player from all time"""
+    if player == None:
+        player = interaction.user
+
+    stats = api.get_stats(player.id)
+
+    if stats is None or len(stats) == 0:
+        await interaction.response.send_message(
+            f"No stats found for {player.mention}", ephemeral=True
+        )
+        return
+    wins = stats[0]["wins"]
+    loses = stats[0]["loses"]
+    winrate = wins / (loses + wins)
+    winrate = round(winrate * 100, 2)
+    match_count = wins + loses
+    match_count = round(match_count, 2)
+    stats_embed = discord.Embed(
+        title=":white_check_mark: STATS",
+        description=f"Stats of **{player.mention}\n **Matches played: **{match_count}**\n Wins: **{wins}**\n Loses: **{loses}**\n Winrate: **{winrate}%**",
+        color=discord.Color.green(),
+    )
+    await interaction.response.send_message(embed=stats_embed, ephemeral=False)
 
 
 client.run(token)

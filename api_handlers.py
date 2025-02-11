@@ -71,6 +71,26 @@ def del_game(id: int):
         print(f"Failed to delete game: {e}")
 
 
+def get_stats(player_id: int):
+    try:
+        response = requests.get(
+            "http://localhost:8000/ranking/base_stats/{}".format(player_id)
+        )
+        if response.status_code == 200:
+            print("Stats retrieved successfully")
+            print(response.json())
+
+            return response.json()
+
+        else:
+            print(f"Could not retrieve stats: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"Failed to retrieve stats: {e}")
+        return None
+    # Create the game data
+
+
 # Main function to run the async task
 
 # response = requests.post(api_url, game)
