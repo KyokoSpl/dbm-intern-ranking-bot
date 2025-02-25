@@ -2,11 +2,11 @@ import discord
 from discord import app_commands
 import settings
 
-# from mapppings import char_map
+from mapppings import char_map
 from AcceptDeclineView import AcceptDeclineView
 import api_handlers as api
 
-MY_GUILD = discord.Object(id=962463337394876436)  # replace with your guild id
+MY_GUILD = discord.Object(id=SOME_ID)  # Replace with your guild ID
 token = settings.TOKEN
 
 
@@ -44,37 +44,37 @@ async def on_ready():
 @app_commands.describe(
     score="Enter the score e.g., 4:3 (First your score)",
     enemy="Enter the opponent",
-    # charp1="Enter your character",
-    # charp2="Enter the enemies character",
+    charp1="Enter your character",
+    charp2="Enter the enemies character",
 )
 async def result(
     interaction: discord.Interaction,
     score: str = "0",
     enemy: discord.Member = None,
-    # charp1: str = "None",
-    # charp2: str = "None",
+    charp1: str = "None",
+    charp2: str = "None",
 ):
     """Enter a result of your set"""
 
     member = interaction.user  # The user executing the command
 
     # validate char selection
-    # if charp1 not in char_map:
-    #     no_char_report = discord.Embed(
-    #         title=":stop_sign: ERROR",
-    #         description="Tipfehler in your character!",
-    #         color=discord.Color.red(),
-    #     )
-    #     await interaction.response.send_message(embed=no_char_report, ephemeral=True)
-    #     return
-    # if charp2 not in char_map:
-    #     no_char_report = discord.Embed(
-    #         title=":stop_sign: ERROR",
-    #         description="Tipfehler in enemy character!",
-    #         color=discord.Color.red(),
-    #     )
-    #     await interaction.response.send_message(embed=no_char_report, ephemeral=True)
-    #     return
+    if charp1 not in char_map:
+        no_char_report = discord.Embed(
+            title=":stop_sign: ERROR",
+            description="Tipfehler in your character!",
+            color=discord.Color.red(),
+        )
+        await interaction.response.send_message(embed=no_char_report, ephemeral=True)
+        return
+    if charp2 not in char_map:
+        no_char_report = discord.Embed(
+            title=":stop_sign: ERROR",
+            description="Tipfehler in enemy character!",
+            color=discord.Color.red(),
+        )
+        await interaction.response.send_message(embed=no_char_report, ephemeral=True)
+        return
 
     # Validate the score format
     if not score.count(":") == 1 or not all(
@@ -97,9 +97,7 @@ async def result(
         await interaction.response.send_message(embed=enemyequalsmember, ephemeral=True)
         return
 
-    bot_role = discord.utils.get(
-        interaction.guild.roles, id=962486170384752680
-    )  # Bot role ID
+    bot_role = discord.utils.get(interaction.guild.roles, id=SOME_ID)  # Bot role ID
     if bot_role in enemy.roles:
         botreport = discord.Embed(
             title=":stop_sign: ERROR",
@@ -109,14 +107,13 @@ async def result(
         await interaction.response.send_message(embed=botreport, ephemeral=True)
         return
 
-    # view = AcceptDeclineView(member, score, enemy, charp1, charp2)
-    view = AcceptDeclineView(member, score, enemy)
+    view = AcceptDeclineView(member, score, enemy, charp1, charp2)
     prompt_embed = discord.Embed(
         title="Do you accept the result?",
-        description=f"**{member.mention}** scored **{score}** against **{enemy.mention}** \n",
+        description=f"**{member.mention}** scored **{score}** against **{enemy.mention}**\n **{member.mention}** played **{charp1}** and **{enemy.mention}** played **{charp2}**",
         color=discord.Color.blue(),
     )
-    # **{member.mention}** played **{charp1}** and **{enemy.mention}** played **{charp2}**"
+    #
     view.message = await interaction.response.send_message(
         f"{enemy.mention}", embed=prompt_embed, view=view
     )
@@ -226,7 +223,6 @@ async def deletegame(
 @app_commands.describe(
     player="Select Member to get his stats",
 )
-@app_commands.default_permissions(administrator=True)
 async def getstats(interaction: discord.Interaction, player: discord.Member = None):
     """Get the stats of a player from all time"""
     if player == None:
