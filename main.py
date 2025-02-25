@@ -1,13 +1,14 @@
-from typing import Optional
-
 import discord
 from discord import app_commands
 import settings
+
+from mapppings import char_map
+from AcceptDeclineView import AcceptDeclineView
 import api_handlers as api
-MY_GUILD = discord.Object(id=GUILDID)  # replace with your guild id
+
+MY_GUILD = discord.Object(id=SOME_ID)  # Replace with your guild ID
 token = settings.TOKEN
-logger = settings.logging.getLogger("bot")
-user_map = {yourid: "your name"}
+
 
 class MyClient(discord.Client):
     def __init__(self, *, intents: discord.Intents):
@@ -36,119 +37,53 @@ client = MyClient(intents=intents)
 
 @client.event
 async def on_ready():
-    logger.info(f'Logged in as: {client.user} (ID: {client.user.id})')
-
-
-
-
-# In this example, even though we use `text_to_send` in the code, the client will use `text` instead.
-# Note that other decorators will still refer to it as `text_to_send` in the code.
-
+    print(f"Logged in as: {client.user} (ID: {client.user.id})")
 
 
 @client.tree.command()
-@app_commands.rename(text_to_send='text')
-@app_commands.describe(text_to_send='Text to send in the current channel')
-async def send(interaction: discord.Interaction, text_to_send: str):
-    """Sends the text into the current channel."""
-    await interaction.response.send_message(text_to_send)
-
-
-
-# To make an argument optional, you can either give it a supported default argument
-# or you can mark it as Optional from the typing standard library. This example does both.
-
-
-
-
-
-class AcceptDeclineView(discord.ui.View):
-    def __init__(self, member: discord.Member, score: str, enemy: discord.Member):
-        super().__init__(timeout=60)  # Die Buttons werden nach 60 Sekunden deaktiviert
-        self.member = member
-        self.score = score
-        self.enemy = enemy
-        self.accepted = None
-
-    @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
-    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
-        moderator_role_id = YOURROLEID
-        moderator_role = discord.utils.get(interaction.guild.roles, id=moderator_role_id)
-
-        if interaction.user == self.enemy or (moderator_role and moderator_role in interaction.user.roles):
-            self.accepted = True
-            acceptembed = discord.Embed(
-                title=":white_check_mark: ACCEPTED",
-                description=f'You accepted the result!',
-                color=discord.Color.green()
-            )
-            await interaction.response.send_message(embed=acceptembed, ephemeral=True)
-
-            # Parse the score into wins and losses for each user
-            member_score, enemy_score = map(int, self.score.split(':'))
-            
-            # Create the result message
-            result_embed = discord.Embed(
-                    title=":information: MATCH RESULT",
-                description=f"**{self.member.mention} won a match ({member_score}:{enemy_score}) against {self.enemy.mention}**",
-                color=discord.Color.blue()
-            )
-            await interaction.followup.send(embed=result_embed)
-            # Get IDs
-            member = int(self.member.id)
-            enemy = int(self.enemy.id)
-
-            # Map IDs to usernames
-            member_name = user_map.get(member, "Unknown User")
-            enemy_name = user_map.get(enemy, "Unknown User")
-            api_call_one = api.send_game_data(member_name, member_score, enemy_score)
-            api_call_two = api.send_game_data(enemy_name, enemy_score, member_score)
-            self.stop()
-        else:
-            notallowed_embed = discord.Embed(
-                title=":no_entry_sign: NOT ALLOWED!",
-                description="You're not allowed to do that!",
-                color=discord.Color.red()
-            )
-            await interaction.response.send_message(embed=notallowed_embed, ephemeral=True)
-
-    @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
-    async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
-        moderator_role_id = 962745818023092326
-        moderator_role = discord.utils.get(interaction.guild.roles, id=moderator_role_id)
-
-        if interaction.user == self.enemy or (moderator_role and moderator_role in interaction.user.roles):            
-            self.accepted = False
-
-            report_embed = discord.Embed(
-                title=":x: RESULT DECLINED",
-                description=f'{self.enemy.mention} has declined the match result reported by {self.member.mention}. **Moderators have been notified!**',
-                color=discord.Color.orange()
-            )
-            await interaction.response.send_message(embed=report_embed)
-
-            self.stop()
-        else:
-            notallowed_embed = discord.Embed(
-                title=":no_entry_sign: NOT ALLOWED!",
-                description="You're not allowed to do that!",
-                color=discord.Color.red()
-            )
-            await interaction.response.send_message(embed=notallowed_embed, ephemeral=True)
-
-
-@client.tree.command()
-@app_commands.describe(score='Enter the score e.g., 4:3 (First your score)', enemy='Enter the opponent')
-async def result(interaction: discord.Interaction, score: str = "0", enemy: discord.Member = None):
+@app_commands.describe(
+    score="Enter the score e.g., 4:3 (First your score)",
+    enemy="Enter the opponent",
+    charp1="Enter your character",
+    charp2="Enter the enemies character",
+)
+async def result(
+    interaction: discord.Interaction,
+    score: str = "0",
+    enemy: discord.Member = None,
+    charp1: str = "None",
+    charp2: str = "None",
+):
     """Enter a result of your set"""
 
-    member = interaction.user  # Der Benutzer, der den Befehl ausführt
+    member = interaction.user  # The user executing the command
 
-    if not score.count(':') == 1 or not all(part.isdigit() for part in score.split(':')):
-        scoreinvalid = discord.Embed (
+    # validate char selection
+    if charp1 not in char_map:
+        no_char_report = discord.Embed(
+            title=":stop_sign: ERROR",
+            description="Tipfehler in your character!",
+            color=discord.Color.red(),
+        )
+        await interaction.response.send_message(embed=no_char_report, ephemeral=True)
+        return
+    if charp2 not in char_map:
+        no_char_report = discord.Embed(
+            title=":stop_sign: ERROR",
+            description="Tipfehler in enemy character!",
+            color=discord.Color.red(),
+        )
+        await interaction.response.send_message(embed=no_char_report, ephemeral=True)
+        return
+
+    # Validate the score format
+    if not score.count(":") == 1 or not all(
+        part.isdigit() for part in score.split(":")
+    ):
+        scoreinvalid = discord.Embed(
             title=":stop_sign: ERROR",
             description="Invalid score format! Please use X:X where X is a number.",
-            color=discord.Color.red()
+            color=discord.Color.red(),
         )
         await interaction.response.send_message(embed=scoreinvalid, ephemeral=True)
         return
@@ -157,30 +92,161 @@ async def result(interaction: discord.Interaction, score: str = "0", enemy: disc
         enemyequalsmember = discord.Embed(
             title=":stop_sign: ERROR",
             description="You cannot report a match against yourself!",
-            color=discord.Color.red()
+            color=discord.Color.red(),
         )
         await interaction.response.send_message(embed=enemyequalsmember, ephemeral=True)
         return
-    
-    bot_role = discord.utils.get(interaction.guild.roles, id=962486170384752680)  # Bot-Rolle ID
+
+    bot_role = discord.utils.get(interaction.guild.roles, id=SOME_ID)  # Bot role ID
     if bot_role in enemy.roles:
         botreport = discord.Embed(
             title=":stop_sign: ERROR",
             description="Seriously? You wanna play against one of the all mighty?",
-            color=discord.Color.red()
+            color=discord.Color.red(),
         )
         await interaction.response.send_message(embed=botreport, ephemeral=True)
         return
 
-    view = AcceptDeclineView(member, score, enemy)
+    view = AcceptDeclineView(member, score, enemy, charp1, charp2)
     prompt_embed = discord.Embed(
         title="Do you accept the result?",
-        description=f'**{member.mention}** scored **{score}** vs **{enemy.mention}**',
-        color=discord.Color.blue()
+        description=f"**{member.mention}** scored **{score}** against **{enemy.mention}**\n **{member.mention}** played **{charp1}** and **{enemy.mention}** played **{charp2}**",
+        color=discord.Color.blue(),
     )
-    view.message = await interaction.response.send_message(f'{enemy.mention}', embed=prompt_embed, view=view)
+    #
+    view.message = await interaction.response.send_message(
+        f"{enemy.mention}", embed=prompt_embed, view=view
+    )
 
 
+@client.tree.command()
+@app_commands.describe(
+    player="Select Member",
+    displayname="Enter the display name",
+)
+@app_commands.default_permissions(administrator=True)
+async def addplayer(
+    interaction: discord.Interaction,
+    player: discord.Member = None,
+    displayname: str = "None",
+):
+    """Add a player to the database"""
+
+    if player == None:
+        no_player = discord.Embed(
+            title=":stop_sign: ERROR",
+            description="You need to select a player!",
+            color=discord.Color.red(),
+        )
+        await interaction.response.send_message(embed=no_player, ephemeral=True)
+        return
+    if displayname == "None":
+        no_displayname = discord.Embed(
+            title=":stop_sign: ERROR",
+            description="You need to enter a display name!",
+            color=discord.Color.red(),
+        )
+        await interaction.response.send_message(embed=no_displayname, ephemeral=True)
+        return
+    else:
+        # send the player to the api
+        api.add_player(player.id, displayname)
+        added_player = discord.Embed(
+            title=":white_check_mark: ADDED",
+            description=f"Added {player.mention} to the database!",
+            color=discord.Color.green(),
+        )
+        await interaction.response.send_message(embed=added_player, ephemeral=True)
 
 
-client.run(token, root_logger=True)
+@client.tree.command()
+@app_commands.describe(
+    player="Select Member",
+)
+@app_commands.default_permissions(administrator=True)
+async def deleteplayer(
+    interaction: discord.Interaction,
+    player: discord.Member = None,
+):
+    if player == None:
+        no_player = discord.Embed(
+            title=":stop_sign: ERROR",
+            description="You need to select a player!",
+            color=discord.Color.red(),
+        )
+        await interaction.response.send_message(embed=no_player, ephemeral=True)
+        return
+    else:
+        # send the player to the api
+        api.delete_player(player.id)
+        deleted_player = discord.Embed(
+            title=":white_check_mark: DELETED",
+            description=f"Deleted {player.mention} from the database!",
+            color=discord.Color.green(),
+        )
+        await interaction.response.send_message(embed=deleted_player, ephemeral=True)
+
+
+@client.tree.command()
+@app_commands.describe(
+    score1="Enter the id of the first result",
+    score2="Enter the id of the second result",
+)
+@app_commands.default_permissions(administrator=True)
+async def deletegame(
+    interaction: discord.Interaction,
+    score1: int = None,
+    score2: int = None,
+):
+    """Delete a game from the database"""
+    if score1 == None or score2 == None:
+        no_game = discord.Embed(
+            title=":stop_sign: ERROR",
+            description="You need to select a game!",
+            color=discord.Color.red(),
+        )
+        await interaction.response.send_message(embed=no_game, ephemeral=True)
+        return
+    else:
+        # send the player to the api
+        api.del_game(score1)
+        api.del_game(score2)
+        deleted_game = discord.Embed(
+            title=":white_check_mark: DELETED",
+            description=f"Deleted {score1} and {score2} from the database!",
+            color=discord.Color.green(),
+        )
+        await interaction.response.send_message(embed=deleted_game, ephemeral=True)
+
+
+@client.tree.command()
+@app_commands.describe(
+    player="Select Member to get his stats",
+)
+async def getstats(interaction: discord.Interaction, player: discord.Member = None):
+    """Get the stats of a player from all time"""
+    if player == None:
+        player = interaction.user
+
+    stats = api.get_stats(player.id)
+
+    if stats is None or len(stats) == 0:
+        await interaction.response.send_message(
+            f"No stats found for {player.mention}", ephemeral=True
+        )
+        return
+    wins = stats[0]["wins"]
+    loses = stats[0]["loses"]
+    winrate = wins / (loses + wins)
+    winrate = round(winrate * 100, 2)
+    match_count = wins + loses
+    match_count = round(match_count, 2)
+    stats_embed = discord.Embed(
+        title=":white_check_mark: STATS",
+        description=f"Stats of **{player.mention}\n **Matches played: **{match_count}**\n Wins: **{wins}**\n Loses: **{loses}**\n Winrate: **{winrate}%**",
+        color=discord.Color.green(),
+    )
+    await interaction.response.send_message(embed=stats_embed, ephemeral=False)
+
+
+client.run(token)
