@@ -8,7 +8,7 @@ char_map = {
     "Yoshi": 12,
     "Kirby": 13,
     "Fox": 14,
-    "Pikacu": 15,
+    "Pikachu": 15,
     "Luigi": 16,
     "Ness": 17,
     "Captain Falcon": 18,
@@ -83,4 +83,7 @@ char_map = {
     "Kazuya": 89,
     "Sora": 90,
     "Random": 91,
+    "Mii Swordfighter": 96,
+    "Mii Gunner": 97,
+    "Mii Brawler": 98,
 }
