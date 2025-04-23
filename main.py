@@ -6,7 +6,7 @@ from mappings import char_map
 from AcceptDeclineView import AcceptDeclineView
 import api_handlers as api
 
-MY_GUILD = discord.Object(id=settings.GUILDID)  # replace with your guild id
+MY_GUILD = discord.Object(id=GUILDID)  # replace with your guild id
 token = settings.TOKEN
 
 
@@ -85,7 +85,8 @@ async def result(
         return
 
     bot_role = discord.utils.get(
-        interaction.guild.roles, id=settings.MODROLE
+        interaction.guild.roles,
+        id=BOTROLE,  # Bot role ID replace with your bot role id
     )  # Bot role ID
     if bot_role in enemy.roles:
         botreport = discord.Embed(
@@ -206,6 +207,24 @@ async def deletegame(
             color=discord.Color.green(),
         )
         await interaction.response.send_message(embed=deleted_game, ephemeral=True)
+
+
+@client.tree.command()
+@app_commands.describe()
+@app_commands.default_permissions(administrator=True)
+async def getplayerlist(interaction: discord.Interaction):
+    """Get the list of all players"""
+    playerlist = api.get_player_list()
+    if playerlist is None or len(playerlist) == 0:
+        await interaction.response.send_message(f"No players found!", ephemeral=True)
+        return
+    else:
+        player = discord.Embed(
+            title=":white_check_mark: PLAYERS",
+            description=f"Players in the database:\n {playerlist}",
+            color=discord.Color.green(),
+        )
+        await interaction.response.send_message(embed=player, ephemeral=False)
 
 
 @client.tree.command()
