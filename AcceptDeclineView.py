@@ -1,6 +1,7 @@
 import discord
-from mapppings import char_map
+from mappings import char_map
 import api_handlers as api
+import settings
 
 
 class AcceptDeclineView(discord.ui.View):
@@ -22,7 +23,7 @@ class AcceptDeclineView(discord.ui.View):
 
     @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
     async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
-        moderator_role_id = SOME_ID
+        moderator_role_id = 962745818023092326
         moderator_role = discord.utils.get(
             interaction.guild.roles, id=moderator_role_id
         )
@@ -47,6 +48,7 @@ class AcceptDeclineView(discord.ui.View):
                 description=f"**{self.member.mention}** scored **({member_score}:{enemy_score})** against **{self.enemy.mention}** \n **{self.member.mention}** played **{self.charp1}** and **{self.enemy.mention}** played **{self.charp2}**",
                 color=discord.Color.blue(),
             )
+            # **{self.member.mention}** played **{self.charp1}** and **{self.enemy.mention}** played **{self.charp2}**
             await interaction.followup.send(embed=result_embed)
             # Get IDs
             member = int(self.member.id)
@@ -54,12 +56,14 @@ class AcceptDeclineView(discord.ui.View):
 
             # Map IDs to usernames
 
+            print(member)
+            print(enemy)
             charp1_id = char_map.get(self.charp1)
             charp2_id = char_map.get(self.charp2)
-            api_call_one = api.send_game_data(
+            _api_call_one = api.send_game_data(
                 member, charp1_id, member_score, enemy_score
             )
-            api_call_two = api.send_game_data(
+            _api_call_two = api.send_game_data(
                 enemy, charp2_id, enemy_score, member_score
             )
             self.stop()
@@ -77,7 +81,7 @@ class AcceptDeclineView(discord.ui.View):
     async def decline(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        moderator_role_id = SOME_ID
+        moderator_role_id = settings.MODROLE
         moderator_role = discord.utils.get(
             interaction.guild.roles, id=moderator_role_id
         )

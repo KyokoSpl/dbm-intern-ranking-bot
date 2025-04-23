@@ -2,11 +2,11 @@ import discord
 from discord import app_commands
 import settings
 
-from mapppings import char_map
+from mappings import char_map
 from AcceptDeclineView import AcceptDeclineView
 import api_handlers as api
 
-MY_GUILD = discord.Object(id=SOME_ID)  # Replace with your guild ID
+MY_GUILD = discord.Object(id=settings.GUILDID)  # replace with your guild id
 token = settings.TOKEN
 
 
@@ -58,22 +58,9 @@ async def result(
 
     member = interaction.user  # The user executing the command
 
-    # validate char selection
-    if charp1 not in char_map:
-        no_char_report = discord.Embed(
-            title=":stop_sign: ERROR",
-            description="Tipfehler in your character!",
-            color=discord.Color.red(),
-        )
-        await interaction.response.send_message(embed=no_char_report, ephemeral=True)
+    if not await char_validation(charp1, is_enemy=False, interaction=interaction):
         return
-    if charp2 not in char_map:
-        no_char_report = discord.Embed(
-            title=":stop_sign: ERROR",
-            description="Tipfehler in enemy character!",
-            color=discord.Color.red(),
-        )
-        await interaction.response.send_message(embed=no_char_report, ephemeral=True)
+    if not await char_validation(charp2, is_enemy=True, interaction=interaction):
         return
 
     # Validate the score format
@@ -97,7 +84,9 @@ async def result(
         await interaction.response.send_message(embed=enemyequalsmember, ephemeral=True)
         return
 
-    bot_role = discord.utils.get(interaction.guild.roles, id=SOME_ID)  # Bot role ID
+    bot_role = discord.utils.get(
+        interaction.guild.roles, id=settings.MODROLE
+    )  # Bot role ID
     if bot_role in enemy.roles:
         botreport = discord.Embed(
             title=":stop_sign: ERROR",
@@ -247,6 +236,28 @@ async def getstats(interaction: discord.Interaction, player: discord.Member = No
         color=discord.Color.green(),
     )
     await interaction.response.send_message(embed=stats_embed, ephemeral=False)
+
+
+# validate char selection
+async def char_validation(
+    char: str, is_enemy: bool = False, interaction: discord.Interaction = None
+) -> bool:
+    if char.lower() not in [char.lower() for char in char_map.keys()]:
+        if is_enemy is False:
+            message = "Tipfehler in your character!"
+
+        else:
+            message = "Tipfehler in enemy character!"
+
+        no_char_report = discord.Embed(
+            title=":stop_sign: ERROR",
+            description=message,
+            color=discord.Color.red(),
+        )
+        await interaction.response.send_message(embed=no_char_report, ephemeral=True)
+        return False
+
+    return True
 
 
 client.run(token)

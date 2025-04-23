@@ -5,6 +5,7 @@ import json
 
 def send_game_data(player_id: int, fighter_id_1: int, wins: int, loses: int):
     # Create the game data
+    # fighter_id_1: int,
     game = {
         "player_id": player_id,
         "fighter_id_1": fighter_id_1,
@@ -87,6 +88,10 @@ def get_stats(player_id: int):
     except Exception as e:
         print(f"Failed to retrieve stats: {e}")
         return None
+    # Create the game data
 
 
 # Main function to run the async task
+
+# response = requests.post(api_url, game)
+# print(response)
