@@ -88,7 +88,27 @@ def get_stats(player_id: int):
     except Exception as e:
         print(f"Failed to retrieve stats: {e}")
         return None
-    # Create the game data
+
+
+def get_player_list():
+    try:
+        response = requests.get("http://localhost:8000/ranking/player")
+        if response.status_code == 200:
+            print("Player list retrieved successfully")
+            print(response.json())
+
+            player_list = "\n".join(
+                [player["player_name"] for player in response.json()]
+            )
+
+            return player_list
+
+        else:
+            print(f"Could not retrieve player list: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"Failed to retrieve player list: {e}")
+        return None
 
 
 # Main function to run the async task

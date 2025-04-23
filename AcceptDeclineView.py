@@ -23,7 +23,7 @@ class AcceptDeclineView(discord.ui.View):
 
     @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
     async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
-        moderator_role_id = 962745818023092326
+        moderator_role_id = MODROLE  # replace with your moderator role id
         moderator_role = discord.utils.get(
             interaction.guild.roles, id=moderator_role_id
         )
