@@ -13,18 +13,9 @@ token = settings.TOKEN
 class MyClient(discord.Client):
     def __init__(self, *, intents: discord.Intents):
         super().__init__(intents=intents)
-        # A CommandTree is a special type that holds all the application command
-        # state required to make it work. This is a separate class because it
-        # allows all the extra state to be opt-in.
-        # Whenever you want to work with application commands, your tree is used
-        # to store and work with them.
-        # Note: When using commands.Bot instead of discord.Client, the bot will
-        # maintain its own tree instead.
+
         self.tree = app_commands.CommandTree(self)
 
-    # In this basic example, we just synchronize the app commands to one guild.
-    # Instead of specifying a guild to every command, we copy over our global commands instead.
-    # By doing so, we don't have to wait up to an hour until they are shown to the end-user.
     async def setup_hook(self):
         # This copies the global commands over to your guild.
         self.tree.copy_global_to(guild=MY_GUILD)
@@ -158,6 +149,7 @@ async def deleteplayer(
     interaction: discord.Interaction,
     player: discord.Member = None,
 ):
+    """Delete a player from the database"""
     if player == None:
         no_player = discord.Embed(
             title=":stop_sign: ERROR",
@@ -263,10 +255,10 @@ async def char_validation(
 ) -> bool:
     if char.lower() not in [char.lower() for char in char_map.keys()]:
         if is_enemy is False:
-            message = "Tipfehler in your character!"
+            message = "Tippfehler in your character!"
 
         else:
-            message = "Tipfehler in enemy character!"
+            message = "Tippfehler in enemy character!"
 
         no_char_report = discord.Embed(
             title=":stop_sign: ERROR",

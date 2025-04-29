@@ -48,7 +48,7 @@ class AcceptDeclineView(discord.ui.View):
                 description=f"**{self.member.mention}** scored **({member_score}:{enemy_score})** against **{self.enemy.mention}** \n **{self.member.mention}** played **{self.charp1}** and **{self.enemy.mention}** played **{self.charp2}**",
                 color=discord.Color.blue(),
             )
-            # **{self.member.mention}** played **{self.charp1}** and **{self.enemy.mention}** played **{self.charp2}**
+
             await interaction.followup.send(embed=result_embed)
             # Get IDs
             member = int(self.member.id)

@@ -109,9 +109,3 @@ def get_player_list():
     except Exception as e:
         print(f"Failed to retrieve player list: {e}")
         return None
-
-
-# Main function to run the async task
-
-# response = requests.post(api_url, game)
-# print(response)
