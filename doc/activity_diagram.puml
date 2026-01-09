@@ -1,0 +1,81 @@
+@startuml activity_diagram
+|Player|
+start
+:Player selects /result command;
+:Enter match score (X:X);
+:Select opponent;
+:Select own character;
+:Select opponent's character;
+
+|System|
+:Validate score format;
+if (Score format valid?) then (no)
+  :Display error message;
+  stop
+endif
+
+:Validate player != opponent;
+if (Self-match?) then (yes)
+  :Display error message;
+  stop
+endif
+
+:Validate opponent is not bot;
+if (Opponent is bot?) then (yes)
+  :Display error message;
+  stop
+endif
+
+:Validate character selection (Player);
+if (Character valid?) then (no)
+  :Display error message;
+  stop
+endif
+
+:Validate character selection (Opponent);
+if (Character valid?) then (no)
+  :Display error message;
+  stop
+endif
+
+:Create AcceptDeclineView;
+:Send prompt to opponent with Accept/Decline buttons;
+
+|Opponent/Moderator|
+:Receive notification;
+note right
+  Timeout: 5 minutes
+end note
+
+if (Response received?) then (Accept)
+  |System|
+  :Check if user is opponent or moderator;
+  if (Authorized?) then (yes)
+    :Parse match scores;
+    :Map characters to IDs;
+    :Send game data to API (Player 1);
+    :Send game data to API (Player 2);
+    :Display success message;
+    :Broadcast match result to channel;
+    stop
+  else (no)
+    :Display "Not Allowed" error;
+    stop
+  endif
+elseif (Decline) then (yes)
+  |System|
+  :Check if user is opponent or moderator;
+  if (Authorized?) then (yes)
+    :Display decline message;
+    :Notify moderators;
+    stop
+  else (no)
+    :Display "Not Allowed" error;
+    stop
+  endif
+else (Timeout)
+  :Deactivate buttons;
+  stop
+endif
+
+@enduml

@@ -1,0 +1,158 @@
+@startuml class_diagram
+skinparam classAttributeIconSize 0
+
+package "Discord Bot Client" {
+  class MyClient {
+    - intents: discord.Intents
+    - tree: app_commands.CommandTree
+    + __init__(intents: discord.Intents)
+    + setup_hook(): async
+    + on_ready(): async
+  }
+  
+  class "discord.Client" as DiscordClient {
+    {abstract}
+  }
+  
+  MyClient --|> DiscordClient
+}
+
+package "UI Components" {
+  class AcceptDeclineView {
+    - member: discord.Member
+    - score: str
+    - enemy: discord.Member
+    - charp1: str
+    - charp2: str
+    - accepted: bool
+    + __init__(member, score, enemy, charp1, charp2)
+    + accept(interaction, button): async
+    + decline(interaction, button): async
+  }
+  
+  class "discord.ui.View" as UIView {
+    {abstract}
+  }
+  
+  AcceptDeclineView --|> UIView
+}
+
+package "Command Handlers" {
+  class CommandHandlers <<module>> {
+    + result(interaction, score, enemy, charp1, charp2): async
+    + addplayer(interaction, player, displayname): async
+    + deleteplayer(interaction, player): async
+    + deletegame(interaction, score1, score2): async
+    + getplayerlist(interaction): async
+    + getstats(interaction, player): async
+    + char_validation(char, is_enemy, interaction): async
+  }
+}
+
+package "API Handlers" {
+  class APIHandlers <<module>> {
+    + send_game_data(player_id: int, fighter_id_1: int, wins: int, loses: int): void
+    + add_player(player_id: int, name: str): void
+    + delete_player(player_id: int): void
+    + del_game(id: int): void
+    + get_stats(player_id: int): dict
+    + get_player_list(): str
+  }
+}
+
+package "Configuration" {
+  class Mappings <<module>> {
+    + char_map: dict<str, int>
+  }
+  
+  class Settings <<module>> {
+    + TOKEN: str
+    + MODROLE: int
+    + GUILDID: int
+    + BOTROLE: int
+  }
+}
+
+package "External Systems" {
+  class "Ranking API" as RankingAPI <<external>> {
+    + POST /ranking/game
+    + POST /ranking/addplayer
+    + DELETE /ranking/deleteplayer
+    + DELETE /ranking/delgame
+    + GET /ranking/base_stats/{player_id}
+    + GET /ranking/player
+  }
+}
+
+package "Discord API" {
+  class "discord.Interaction" as Interaction {
+    + user: discord.Member
+    + guild: discord.Guild
+    + response: InteractionResponse
+  }
+  
+  class "discord.Member" as Member {
+    + id: int
+    + mention: str
+    + roles: List[discord.Role]
+  }
+  
+  class "discord.Embed" as Embed {
+    + title: str
+    + description: str
+    + color: discord.Color
+  }
+}
+
+' Relationships
+MyClient --> CommandHandlers : registers commands
+CommandHandlers --> AcceptDeclineView : creates
+CommandHandlers --> APIHandlers : calls
+CommandHandlers --> Mappings : uses
+CommandHandlers --> Settings : uses
+CommandHandlers --> Interaction : receives
+CommandHandlers --> Embed : creates
+
+AcceptDeclineView --> APIHandlers : calls on accept
+AcceptDeclineView --> Mappings : uses
+AcceptDeclineView --> Settings : uses
+AcceptDeclineView --> Member : references
+AcceptDeclineView --> Interaction : handles
+AcceptDeclineView --> Embed : creates
+
+APIHandlers --> RankingAPI : HTTP requests
+
+Mappings ..> RankingAPI : maps to fighter IDs
+Settings ..> MyClient : configures
+
+note right of CommandHandlers
+  Implements all Discord slash commands:
+  - /result: Report match results
+  - /addplayer: Add player to DB
+  - /deleteplayer: Remove player
+  - /deletegame: Remove game record
+  - /getplayerlist: List all players
+  - /getstats: Get player statistics
+end note
+
+note right of AcceptDeclineView
+  Interactive UI component with:
+  - Accept button (green)
+  - Decline button (red)
+  - 5 minute timeout
+  - Authorization checks
+end note
+
+note bottom of APIHandlers
+  All API calls use HTTP REST:
+  - Base URL: http://localhost:8000
+  - JSON payload format
+  - Error handling with try/catch
+end note
+
+note top of Mappings
+  Maps Super Smash Bros. character
+  names to database fighter IDs
+end note
+
+@enduml

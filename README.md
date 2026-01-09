@@ -2,6 +2,21 @@
 
 This is a discord bot that allows you to track results manage player and create own rankings.
 
+## 📚 Documentation
+
+**Comprehensive UML diagrams and architecture documentation are available in the [`doc/`](doc/) folder!**
+
+- 🎨 **Use Case Diagram** - User interactions and system capabilities
+- 📊 **Activity Diagram** - Match result reporting workflow
+- 🔄 **Sequence Diagram** - Detailed message flows and interactions
+- 🏗️ **Component Diagram** - System architecture and dependencies
+- 📦 **Class Diagram** - Code structure and relationships
+
+**Quick Links:**
+- [Documentation Index](doc/INDEX.md) - Start here for navigation
+- [Architecture Overview](doc/ARCHITECTURE_OVERVIEW.txt) - ASCII art system overview
+- [Quick Reference](doc/DIAGRAM_QUICK_REFERENCE.md) - Diagram cheat sheet
+
 ## ! IMPORTANT !
 **set up the api found here first: [dbm ranking api](https://github.com/kyoko-git/dbm-ranking-api)**
 

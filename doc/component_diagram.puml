@@ -1,0 +1,112 @@
+@startuml component_diagram
+!theme plain
+skinparam componentStyle rectangle
+
+title DBM Ranking Bot - Component Diagram
+
+' External Systems
+cloud "Discord Platform" as discord {
+  component [Discord API] as discordapi
+  component [Discord Gateway] as gateway
+}
+
+cloud "Backend Services" as backend {
+  database "PostgreSQL" as db {
+    collections "Players" as players_table
+    collections "Games" as games_table
+    collections "Fighters" as fighters_table
+  }
+  
+  component [Ranking API\n(REST)] as rankingapi
+}
+
+' Main Bot System
+package "DBM Ranking Bot" {
+  
+  ' Core Components
+  component [MyClient\n(Bot Core)] as client
+  
+  component [Command Handlers\n(/result, /addplayer,\n/deleteplayer, /deletegame,\n/getstats, /getplayerlist)] as commands
+  
+  component [AcceptDeclineView\n(Accept/Decline Buttons)] as view
+  
+  component [API Handlers\n(HTTP REST Client)] as apihandlers
+  
+  ' Configuration
+  package "Configuration" {
+    component [Settings] as settings
+    component [Character Mappings] as mappings
+  }
+  
+  ' Validation
+  component [Validation Logic\n(Character, Score,\nPermission Validators)] as validation
+}
+
+' External Dependencies
+component [discord.py Library] as discordpy
+component [requests Library] as requests
+
+' Relationships - Bot Internal
+client -down-> commands : registers\ncommands
+commands -down-> view : creates
+commands -down-> validation : validates\ninput
+view -down-> apihandlers : sends\ndata
+commands -down-> apihandlers : calls
+validation -right-> mappings : queries
+commands -right-> settings : reads\nconfig
+view -right-> settings : reads\nconfig
+view -right-> mappings : queries
+
+' Relationships - External Libraries
+client ..> discordpy : depends on
+apihandlers ..> requests : depends on
+
+' Relationships - Discord Platform
+discordpy -up-> discordapi : uses
+client -up-> gateway : connects to
+gateway -down-> client : receives\nevents
+
+' Relationships - Backend
+apihandlers -down-> rankingapi : HTTP REST\ncalls
+rankingapi -down-> db : CRUD\noperations
+
+' Notes
+note right of settings
+  Configuration:
+  - TOKEN
+  - MODROLE
+  - GUILDID  
+  - BOTROLE
+end note
+
+note right of mappings
+  Maps character names
+  to fighter IDs in DB
+  (92 characters)
+end note
+
+note right of rankingapi
+  **Endpoints:**
+  POST /ranking/game
+  POST /ranking/addplayer
+  DELETE /ranking/deleteplayer
+  DELETE /ranking/delgame
+  GET /ranking/base_stats/{id}
+  GET /ranking/player
+end note
+
+note top of commands
+  **Command Flow:**
+  User → Discord → Bot → Handler → 
+  API → Database
+end note
+
+note bottom of client
+  **Deployment:**
+  - Python 3.8+
+  - Single process
+  - Event-driven architecture
+  - Async/await pattern
+end note
+
+@enduml

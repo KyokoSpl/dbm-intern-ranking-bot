@@ -1,0 +1,159 @@
+@startuml sequence_diagram
+!theme plain
+title Match Result Reporting - Sequence Diagram
+
+actor Player1 as "Player\n(Reporter)"
+actor Player2 as "Opponent"
+participant Discord as "Discord\nClient"
+participant MyClient as "MyClient\n(Bot)"
+participant CommandHandler as "Command\nHandler"
+participant AcceptDeclineView as "Accept/Decline\nView"
+participant APIHandlers as "API\nHandlers"
+participant Mappings as "Character\nMappings"
+participant RankingAPI as "Ranking\nAPI"
+
+== Match Result Submission ==
+
+Player1 -> Discord: /result score:3:2 enemy:@Player2\ncharp1:Mario charp2:Luigi
+Discord -> MyClient: Interaction event
+MyClient -> CommandHandler: result()
+
+activate CommandHandler
+
+CommandHandler -> CommandHandler: Validate score format
+alt Invalid score format
+    CommandHandler -> Player1: Error: Invalid score format
+    deactivate CommandHandler
+    return
+end
+
+CommandHandler -> CommandHandler: Check if player == enemy
+alt Self-match detected
+    CommandHandler -> Player1: Error: Cannot report against yourself
+    deactivate CommandHandler
+    return
+end
+
+CommandHandler -> CommandHandler: Check if enemy is bot
+alt Enemy is bot
+    CommandHandler -> Player1: Error: Cannot play against bot
+    deactivate CommandHandler
+    return
+end
+
+CommandHandler -> CommandHandler: char_validation(charp1)
+CommandHandler -> Mappings: Check character "Mario"
+Mappings --> CommandHandler: Character valid
+
+CommandHandler -> CommandHandler: char_validation(charp2)
+CommandHandler -> Mappings: Check character "Luigi"
+Mappings --> CommandHandler: Character valid
+
+alt Invalid character
+    CommandHandler -> Player1: Error: Invalid character
+    deactivate CommandHandler
+    return
+end
+
+CommandHandler -> AcceptDeclineView: new(Player1, "3:2", Player2, "Mario", "Luigi")
+activate AcceptDeclineView
+
+AcceptDeclineView --> CommandHandler: View created
+
+CommandHandler -> Player2: Prompt with Accept/Decline buttons\n+ @mention notification
+deactivate CommandHandler
+
+== Waiting for Response (5 min timeout) ==
+
+note over Player2, AcceptDeclineView
+    Player2 has 5 minutes to respond.
+    Moderators can also accept/decline.
+end note
+
+== Accept Scenario ==
+
+Player2 -> AcceptDeclineView: Click "Accept" button
+activate AcceptDeclineView
+
+AcceptDeclineView -> AcceptDeclineView: Check if user == enemy OR user is moderator
+alt Not authorized
+    AcceptDeclineView -> Player2: Error: Not allowed
+    deactivate AcceptDeclineView
+    return
+end
+
+AcceptDeclineView -> AcceptDeclineView: Parse score: member_score=3, enemy_score=2
+
+AcceptDeclineView -> Mappings: Get fighter ID for "Mario"
+Mappings --> AcceptDeclineView: fighter_id = 7
+
+AcceptDeclineView -> Mappings: Get fighter ID for "Luigi"
+Mappings --> AcceptDeclineView: fighter_id = 16
+
+AcceptDeclineView -> APIHandlers: send_game_data(Player1.id, 7, 3, 2)
+activate APIHandlers
+APIHandlers -> RankingAPI: POST /ranking/game\n{player_id, fighter_id, wins, loses}
+RankingAPI --> APIHandlers: 200 OK
+deactivate APIHandlers
+
+AcceptDeclineView -> APIHandlers: send_game_data(Player2.id, 16, 2, 3)
+activate APIHandlers
+APIHandlers -> RankingAPI: POST /ranking/game\n{player_id, fighter_id, wins, loses}
+RankingAPI --> APIHandlers: 200 OK
+deactivate APIHandlers
+
+AcceptDeclineView -> Player2: Ephemeral: "You accepted the result!"
+AcceptDeclineView -> Discord: Broadcast match result to channel
+Discord -> Player1: Match result notification
+Discord -> Player2: Match result notification
+
+deactivate AcceptDeclineView
+
+== Decline Scenario ==
+
+alt Player2 declines
+    Player2 -> AcceptDeclineView: Click "Decline" button
+    activate AcceptDeclineView
+    
+    AcceptDeclineView -> AcceptDeclineView: Check if user == enemy OR user is moderator
+    alt Not authorized
+        AcceptDeclineView -> Player2: Error: Not allowed
+        deactivate AcceptDeclineView
+        return
+    end
+    
+    AcceptDeclineView -> Discord: Broadcast decline message\n+ Notify moderators
+    Discord -> Player1: Result declined notification
+    Discord -> Player2: Result declined notification
+    Discord -> "Moderators": Notification: Dispute needs review
+    
+    deactivate AcceptDeclineView
+end
+
+== Get Stats Scenario ==
+
+Player1 -> Discord: /getstats player:@Player1
+Discord -> MyClient: Interaction event
+MyClient -> CommandHandler: getstats()
+
+activate CommandHandler
+
+CommandHandler -> APIHandlers: get_stats(Player1.id)
+activate APIHandlers
+
+APIHandlers -> RankingAPI: GET /ranking/base_stats/{player_id}
+RankingAPI --> APIHandlers: JSON: {wins, loses}
+
+APIHandlers --> CommandHandler: stats dict
+
+deactivate APIHandlers
+
+CommandHandler -> CommandHandler: Calculate winrate
+CommandHandler -> CommandHandler: Create stats embed
+
+CommandHandler -> Discord: Send stats embed
+Discord -> Player1: Display stats
+
+deactivate CommandHandler
+
+@enduml

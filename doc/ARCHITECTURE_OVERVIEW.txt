@@ -1,0 +1,279 @@
+================================================================================
+    DBM RANKING DISCORD BOT - ARCHITECTURE OVERVIEW
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          SYSTEM ARCHITECTURE                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                    ┌─────────────────────────────┐
+                    │     Discord Platform        │
+                    │  (Gateway & REST API)       │
+                    └──────────────┬──────────────┘
+                                   │ WebSocket/HTTP
+                                   │
+                    ┌──────────────▼──────────────┐
+                    │      discord.py Library     │
+                    │   (Event Handler Wrapper)   │
+                    └──────────────┬──────────────┘
+                                   │
+    ┌──────────────────────────────▼──────────────────────────────┐
+    │                    MyClient (Bot Core)                       │
+    │  - Manages Discord connection                                │
+    │  - Command tree registration                                 │
+    │  - Event loop management                                     │
+    └──────────────────────────────┬──────────────────────────────┘
+                                   │
+            ┌──────────────────────┼──────────────────────┐
+            │                      │                      │
+    ┌───────▼────────┐    ┌────────▼────────┐   ┌───────▼────────┐
+    │   Command      │    │  AcceptDecline  │   │   Validation   │
+    │   Handlers     │    │      View       │   │     Logic      │
+    │                │    │                 │   │                │
+    │ • /result      │───▶│ • Accept Btn    │   │ • Char Valid   │
+    │ • /addplayer   │    │ • Decline Btn   │   │ • Score Valid  │
+    │ • /deleteplayer│    │ • Timeout (5m)  │   │ • Permission   │
+    │ • /deletegame  │    └────────┬────────┘   └───────┬────────┘
+    │ • /getstats    │             │                    │
+    │ • /getplayerlist                                  │
+    └────────┬───────┘             │                    │
+             │                     │                    │
+             └─────────────┬───────┘                    │
+                           │                            │
+                   ┌───────▼────────────────────────────▼─────┐
+                   │         API Handlers Module               │
+                   │  (HTTP REST Client - requests library)    │
+                   │                                            │
+                   │  • send_game_data()                        │
+                   │  • add_player()                            │
+                   │  • delete_player()                         │
+                   │  • del_game()                              │
+                   │  • get_stats()                             │
+                   │  • get_player_list()                       │
+                   └───────────────┬────────────────────────────┘
+                                   │ HTTP REST
+                                   │
+                    ┌──────────────▼──────────────┐
+                    │      Ranking API Backend    │
+                    │   (External REST Service)   │
+                    │                             │
+                    │  Endpoints:                 │
+                    │  • POST /ranking/game       │
+                    │  • POST /ranking/addplayer  │
+                    │  • DELETE /ranking/delplayer│
+                    │  • DELETE /ranking/delgame  │
+                    │  • GET /ranking/base_stats  │
+                    │  • GET /ranking/player      │
+                    └──────────────┬──────────────┘
+                                   │
+                    ┌──────────────▼──────────────┐
+                    │   PostgreSQL Database       │
+                    │                             │
+                    │  Tables:                    │
+                    │  • players                  │
+                    │  • games                    │
+                    │  • fighters                 │
+                    └─────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         CONFIGURATION MODULES                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌───────────────────────┐          ┌──────────────────────────┐
+    │   settings.py         │          │    mappings.py           │
+    │                       │          │                          │
+    │  • TOKEN              │          │  char_map = {            │
+    │  • MODROLE            │          │    "Mario": 7,           │
+    │  • GUILDID            │          │    "Luigi": 16,          │
+    │  • BOTROLE            │          │    "Kirby": 13,          │
+    │                       │          │    ...                   │
+    │                       │          │  }                       │
+    └───────────────────────┘          └──────────────────────────┘
+
+================================================================================
+                           USER INTERACTION FLOW
+================================================================================
+
+    Player                 Bot                   Opponent           API
+      │                     │                       │               │
+      │──/result 3:2 @P2───▶│                       │               │
+      │                     │                       │               │
+      │                     │──Validate Input──┐    │               │
+      │                     │                  │    │               │
+      │                     │◀─────────────────┘    │               │
+      │                     │                       │               │
+      │                     │───Prompt @P2 ────────▶│               │
+      │                     │   [Accept][Decline]   │               │
+      │                     │                       │               │
+      │                     │                       │──Click Accept─▶│
+      │                     │                       │               │
+      │                     │◀──────────────────────┘               │
+      │                     │                                       │
+      │                     │──POST game data (P1)─────────────────▶│
+      │                     │                                       │
+      │                     │──POST game data (P2)─────────────────▶│
+      │                     │                                       │
+      │◀──Match Result──────│                                       │
+      │    Notification     │                                       │
+
+================================================================================
+                            KEY DESIGN PATTERNS
+================================================================================
+
+1. COMMAND PATTERN
+   • Each slash command is independently handled
+   • Clean separation between command registration and execution
+
+2. VIEW PATTERN (Discord UI)
+   • AcceptDeclineView encapsulates interactive button logic
+   • Timeout handling and permission checks
+
+3. SEPARATION OF CONCERNS
+   • Command handlers: Discord interaction logic
+   • API handlers: External communication
+   • Validation: Input checking
+   • Configuration: Settings and mappings
+
+4. REPOSITORY PATTERN (via API)
+   • All data persistence through API handlers
+   • No direct database access from bot
+
+5. ROLE-BASED ACCESS CONTROL
+   • Player: Basic commands (result, getstats)
+   • Moderator: Can accept/decline on behalf of players
+   • Administrator: Player management (add, delete, etc.)
+
+================================================================================
+                              DATA FLOW LAYERS
+================================================================================
+
+    ┌─────────────────────────────────────────────────────────────┐
+    │  PRESENTATION LAYER                                         │
+    │  Discord UI: Commands, Embeds, Buttons                      │
+    └─────────────────────────────────────────────────────────────┘
+                            │
+    ┌─────────────────────────────────────────────────────────────┐
+    │  APPLICATION LAYER                                          │
+    │  Command Handlers: Business logic, validation, workflows    │
+    └─────────────────────────────────────────────────────────────┘
+                            │
+    ┌─────────────────────────────────────────────────────────────┐
+    │  INTEGRATION LAYER                                          │
+    │  API Handlers: HTTP client, request/response handling       │
+    └─────────────────────────────────────────────────────────────┘
+                            │
+    ┌─────────────────────────────────────────────────────────────┐
+    │  EXTERNAL SERVICES                                          │
+    │  Ranking API + PostgreSQL Database                          │
+    └─────────────────────────────────────────────────────────────┘
+
+================================================================================
+                           SECURITY & VALIDATION
+================================================================================
+
+    INPUT VALIDATION:
+    ✓ Score format validation (X:X where X is number)
+    ✓ Character name validation (against char_map)
+    ✓ Self-match prevention (player != opponent)
+    ✓ Bot-match prevention (opponent cannot be bot role)
+    
+    AUTHORIZATION:
+    ✓ Role-based permission checks
+    ✓ Accept/Decline: Only opponent or moderator
+    ✓ Admin commands: Only administrators
+    ✓ Timeout protection (5 minutes for interactions)
+    
+    DATA INTEGRITY:
+    ✓ Opponent confirmation required for match results
+    ✓ Bilateral game data recording (both players)
+    ✓ Moderator notification on disputes
+
+================================================================================
+                          DEPLOYMENT ARCHITECTURE
+================================================================================
+
+    ┌─────────────────────────────────────────────────────────────┐
+    │                    PRODUCTION ENVIRONMENT                    │
+    │                                                              │
+    │  ┌────────────────────────────────────────────────────┐     │
+    │  │  Python Process                                     │     │
+    │  │  • Python 3.8+                                      │     │
+    │  │  • main.py (entry point)                            │     │
+    │  │  • Event-driven async architecture                  │     │
+    │  │  • Single process, multi-threaded (asyncio)         │     │
+    │  └────────────────────────────────────────────────────┘     │
+    │                                                              │
+    │  Dependencies:                                               │
+    │  • discord.py (Discord API wrapper)                          │
+    │  • requests (HTTP client)                                    │
+    │                                                              │
+    │  External Connections:                                       │
+    │  • Discord Gateway (WebSocket)                               │
+    │  • Ranking API (HTTP REST)                                   │
+    └─────────────────────────────────────────────────────────────┘
+
+================================================================================
+                            FILE STRUCTURE
+================================================================================
+
+    dbm-intern-ranking-bot/
+    ├── main.py                  # Entry point, MyClient, command definitions
+    ├── AcceptDeclineView.py     # Interactive UI component (buttons)
+    ├── api_handlers.py          # REST API client functions
+    ├── mappings.py              # Character name to ID mappings
+    ├── settings.py              # Configuration (tokens, IDs)
+    ├── requirements.txt         # Python dependencies
+    ├── README.md                # Setup and usage instructions
+    ├── tests/                   # Test files
+    └── doc/                     # Documentation (you are here!)
+        ├── README.md
+        ├── ARCHITECTURE_OVERVIEW.txt
+        ├── DIAGRAM_QUICK_REFERENCE.md
+        ├── use_case_diagram.puml
+        ├── activity_diagram.puml
+        ├── sequence_diagram.puml
+        ├── component_diagram.puml
+        └── class_diagram.puml
+
+================================================================================
+                         KEY TECHNOLOGIES & LIBRARIES
+================================================================================
+
+    • Python 3.8+               : Programming language
+    • discord.py                : Discord bot framework
+    • requests                  : HTTP client for API calls
+    • asyncio                   : Asynchronous I/O
+    • PostgreSQL (external)     : Database (via API)
+    • REST API (external)       : Backend service
+
+================================================================================
+                           FUTURE ENHANCEMENTS
+================================================================================
+
+    Potential improvements for consideration:
+    
+    □ Caching layer for frequently accessed data (player stats, fighter list)
+    □ Rate limiting protection for API calls
+    □ Retry logic with exponential backoff for failed API calls
+    □ Comprehensive logging system
+    □ Health check endpoints
+    □ Metrics and monitoring integration
+    □ Support for tournaments and seasons
+    □ Leaderboard display commands
+    □ Character-specific statistics
+    □ Matchmaking suggestions based on ELO/ranking
+
+================================================================================
+                            SUPPORT & RESOURCES
+================================================================================
+
+    Documentation:    ./doc/README.md
+    Main Project:     ../README.md
+    API Repository:   https://github.com/kyoko-git/dbm-ranking-api
+    Discord.py Docs:  https://discordpy.readthedocs.io/
+    PlantUML Docs:    https://plantuml.com/
+
+================================================================================
+    Last Updated: 2024
+    Maintained by: DBM Ranking Bot Development Team
+================================================================================

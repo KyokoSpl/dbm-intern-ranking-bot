@@ -1,0 +1,73 @@
+@startuml use_case_diagram
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Player" as player
+actor "Administrator" as admin
+actor "Moderator" as mod
+actor "Ranking API" as api
+
+rectangle "DBM Ranking Discord Bot" {
+  usecase "Report Match Result" as UC1
+  usecase "Select Character" as UC2
+  usecase "Accept Match Result" as UC3
+  usecase "Decline Match Result" as UC4
+  usecase "View Player Stats" as UC5
+  usecase "Add Player" as UC6
+  usecase "Delete Player" as UC7
+  usecase "Delete Game" as UC8
+  usecase "Get Player List" as UC9
+  usecase "Validate Character Selection" as UC10
+  usecase "Send Game Data to API" as UC11
+  usecase "Retrieve Stats from API" as UC12
+}
+
+' Player use cases
+player --> UC1
+player --> UC5
+player --> UC3
+player --> UC4
+
+' Administrator use cases
+admin --> UC6
+admin --> UC7
+admin --> UC8
+admin --> UC9
+
+' Moderator use cases (can accept/decline on behalf of players)
+mod --> UC3
+mod --> UC4
+
+' Include relationships
+UC1 ..> UC2 : <<include>>
+UC1 ..> UC10 : <<include>>
+UC3 ..> UC11 : <<include>>
+
+' Extend relationships
+UC4 ..> "Notify Moderators" : <<extend>>
+
+' API interactions
+UC11 --> api
+UC12 --> api
+UC6 --> api
+UC7 --> api
+UC8 --> api
+UC9 --> api
+UC5 ..> UC12 : <<include>>
+
+note right of UC1
+  Player reports match score,
+  opponent must accept or decline
+end note
+
+note right of UC3
+  Only opponent or moderator
+  can accept the result
+end note
+
+note bottom of admin
+  Administrator inherits
+  all Player capabilities
+end note
+
+@enduml
